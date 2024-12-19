@@ -11,7 +11,6 @@
 
 // TODO: Iterator?
 // TODO: `using`
-// TODO: Char-only methods
 // TODO: Static asserts and exceptions
 
 template <typename T>
@@ -36,12 +35,31 @@ class TwinArray {
 
    public:
     // Constructors
-    TwinArray(const std::size_t len = 32)
+    constexpr explicit TwinArray(const std::size_t len = 32)
         : lhs(std::make_unique<T[]>(len)),
           rhs(std::make_unique<T[]>(len)),
           lhs_size(0),
           rhs_size(0),
           capacity(len) {}
+
+    template <typename InputIt>
+    constexpr explicit TwinArray(InputIt begin, InputIt end)
+        : TwinArray(std::distance(begin, end) + 8) {
+        lhs_size = std::distance(begin, end);
+        std::copy(begin, end, lhs);
+    }
+
+    constexpr TwinArray(std::initializer_list<T> lst) : TwinArray(lst.size() + 8) {
+        lhs_size = lst.size();
+        std::copy(lst.begin(), lst.end(), lhs);
+    }
+
+    constexpr explicit TwinArray(std::string_view str)
+        requires(std::is_same_v<T, char>)
+        : TwinArray(str.size() + 8) {
+        lhs_size = str.size();
+        std::copy(str.begin(), str.end(), lhs);
+    }
 
     // Modifiers
     void push(const T& val) {
