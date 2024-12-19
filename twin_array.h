@@ -2,6 +2,7 @@
 #define TWIN_ARRAY_H
 
 #include <algorithm>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -46,19 +47,108 @@ class TwinArray {
     constexpr explicit TwinArray(InputIt begin, InputIt end)
         : TwinArray(std::distance(begin, end) + 8) {
         lhs_size = std::distance(begin, end);
-        std::copy(begin, end, lhs);
+        std::copy(begin, end, lhs.get());
     }
 
     constexpr TwinArray(std::initializer_list<T> lst) : TwinArray(lst.size() + 8) {
         lhs_size = lst.size();
-        std::copy(lst.begin(), lst.end(), lhs);
+        std::copy(lst.begin(), lst.end(), lhs.get());
     }
 
     constexpr explicit TwinArray(std::string_view str)
         requires(std::is_same_v<T, char>)
         : TwinArray(str.size() + 8) {
         lhs_size = str.size();
-        std::copy(str.begin(), str.end(), lhs);
+        std::copy(str.begin(), str.end(), lhs.get());
+    }
+
+    // Copy Constructor
+    TwinArray(const TwinArray& other)
+        : lhs(std::make_unique<T[]>(other.capacity)),
+          rhs(std::make_unique<T[]>(other.capacity)),
+          lhs_size(other.lhs_size),
+          rhs_size(other.rhs_size),
+          capacity(other.capacity) {
+        for (std::size_t i = 0; i < lhs_size; ++i) {
+            lhs[i] = other.lhs[i];
+        }
+
+        for (std::size_t i = 0; i < rhs_size; ++i) {
+            rhs[i] = other.rhs[i];
+        }
+    }
+
+    // Copy Assignment Operator
+    TwinArray& operator=(const TwinArray& other) {
+        if (this != &other) {
+            auto new_lhs = std::make_unique<T[]>(other.capacity);
+            auto new_rhs = std::make_unique<T[]>(other.capacity);
+
+            // Copy data from other
+            for (std::size_t i = 0; i < other.lhs_size; ++i) {
+                new_lhs[i] = other.lhs[i];
+            }
+            for (std::size_t i = 0; i < other.rhs_size; ++i) {
+                new_rhs[i] = other.rhs[i];
+            }
+
+            lhs = std::move(new_lhs);
+            rhs = std::move(new_rhs);
+            lhs_size = other.lhs_size;
+            rhs_size = other.rhs_size;
+            capacity = other.capacity;
+        }
+        return *this;
+    }
+
+    // Move Constructor
+    TwinArray(TwinArray&& other) noexcept
+        : lhs(std::move(other.lhs)),
+          rhs(std::move(other.rhs)),
+          lhs_size(other.lhs_size),
+          rhs_size(other.rhs_size),
+          capacity(other.capacity) {
+        // Reset other's state
+        other.lhs_size = 0;
+        other.rhs_size = 0;
+        other.capacity = 0;
+    }
+
+    // Move Assignment Operator
+    TwinArray& operator=(TwinArray&& other) noexcept {
+        if (this != &other) {
+            // Move resources
+            lhs = std::move(other.lhs);
+            rhs = std::move(other.rhs);
+            lhs_size = other.lhs_size;
+            rhs_size = other.rhs_size;
+            capacity = other.capacity;
+
+            other.lhs_size = 0;
+            other.rhs_size = 0;
+            other.capacity = 0;
+        }
+        return *this;
+    }
+
+    // Destructor
+    ~TwinArray() = default;
+
+    // Operator overloads
+    friend std::ostream& operator<<(std::ostream& os, const TwinArray& buf) {
+        os << "[";
+        for (auto i = 0; i < buf.lhs_size; i++) {
+            os << buf.lhs[i] << " ";
+        }
+        os << "]";
+
+        os << "[";
+        for (auto i = 0; i < buf.rhs_size; i++) {
+            os << buf.rhs[i] << " ";
+        }
+        os << "]";
+
+        return os;
     }
 
     // Modifiers
@@ -75,8 +165,8 @@ class TwinArray {
             return {};
         }
 
-        T ret = lhs[lhs_size];
-        lhs[lhs_size] = T();
+        T ret = lhs[lhs_size - 1];
+        lhs[lhs_size - 1] = T();
         lhs_size--;
 
         return ret;
@@ -87,8 +177,8 @@ class TwinArray {
             return;
         }
 
-        rhs[rhs_size] = lhs[lhs_size];
-        lhs[lhs_size] = T();
+        rhs[rhs_size] = lhs[lhs_size - 1];
+        lhs[lhs_size - 1] = T();
         lhs_size--;
         rhs_size++;
     }
@@ -98,8 +188,8 @@ class TwinArray {
             return;
         }
 
-        lhs[lhs_size] = rhs[rhs_size];
-        rhs[rhs_size] = T();
+        lhs[lhs_size] = rhs[rhs_size - 1];
+        rhs[rhs_size - 1] = T();
         lhs_size++;
         rhs_size--;
     }
@@ -121,8 +211,11 @@ class TwinArray {
         }
     }
 
+    [[nodiscard]] T peek() const { return lhs[lhs_size - 1]; }
+
     // Capacity
     [[nodiscard]] int size() const noexcept { return lhs_size + rhs_size; }
+    [[nodiscard]] int total_capacity() const noexcept { return capacity; }
     [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
     void resize(const std::size_t new_cap) {
