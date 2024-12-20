@@ -126,7 +126,7 @@ ut::suite<"Modifiers"> modifiers = [] {
 
             expect(buf.peek() == 1);
             buf.move_right();
-            expect(buf.peek() == 0) << buf.peek() << buf;
+            expect(buf.peek() == 1);
         };
     };
 };
@@ -145,14 +145,99 @@ ut::suite<"Element Access"> element_access = [] {
         buf.move_left();
 
         expect(buf.at(0) == 1);
-        expect(buf.at(1) == 2);
+        expect(buf.at(1) == 2) << buf.at(1);
         expect(buf.at(2) == 3);
         expect(throws<std::out_of_range>([=] { buf.at(3); }));
     };
 
     "Peek"_test = [] {
         TwinArray<int> buf = {1, 2, 3};
-        expect(buf.peek() == 1);
+        expect(buf.peek() == 3);
+    };
+};
+
+ut::suite<"Capacity"> capacity = [] {
+    using namespace ut;
+
+    "Size"_test = [] {
+        should("All on left") = [] {
+            TwinArray<int> buf = {1, 2, 3};
+            expect(buf.size() == 3);
+        };
+
+        should("Mixed lhs/rhs") = [] {
+            TwinArray<int> buf = {1, 2, 3};
+            buf.move_left();
+            expect(buf.size() == 3);
+        };
+
+        should("All on right") = [] {
+            TwinArray<int> buf = {1, 2, 3};
+            buf.move_left();
+            buf.move_left();
+            buf.move_left();
+            expect(buf.size() == 3);
+        };
+
+        should("No value") = [] {
+            auto buf = TwinArray<int>(8);
+            expect(buf.size() == 0);
+        };
+    };
+
+    "Total Capacity"_test = [] {
+        should("All on left") = [] {
+            TwinArray<int> buf = {1, 2, 3};
+            expect(buf.total_capacity() == 11);
+        };
+
+        should("Mixed lhs/rhs") = [] {
+            TwinArray<int> buf = {1, 2, 3};
+            buf.move_left();
+            expect(buf.total_capacity() == 11);
+        };
+
+        should("All on right") = [] {
+            TwinArray<int> buf = {1, 2, 3};
+            buf.move_left();
+            buf.move_left();
+            buf.move_left();
+            expect(buf.total_capacity() == 11);
+        };
+
+        should("No value") = [] {
+            auto buf = TwinArray<int>(8);
+            expect(buf.total_capacity() == 8);
+        };
+    };
+
+    "Empty"_test = [] {
+        should("Is empty") = [] {
+            auto buf = TwinArray<int>(8);
+            expect(buf.empty() == true);
+        };
+
+        should("Is not empty") = [] {
+            TwinArray<int> buf = {1, 2, 3};
+            expect(buf.empty() == false);
+        };
+    };
+
+    "Resize"_test = [] {
+        auto buf = TwinArray<int>(2);
+        expect(buf.total_capacity() == 2);
+
+        buf.push(1);
+        buf.push(2);
+        buf.push(3);
+        expect(buf.total_capacity() == 4);
+        expect(buf.size() == 3);
+
+        buf.move_left();
+        buf.move_left();
+        buf.move_left();
+        expect(buf.total_capacity() == 4);
+        expect(buf.size() == 3);
     };
 };
 

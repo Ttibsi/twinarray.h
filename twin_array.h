@@ -196,14 +196,13 @@ class TwinArray {
 
     // Element Access
     [[nodiscard]] T at(const std::size_t idx) const {
-        if (idx > size()) {
+        if (idx >= size()) {
             throw std::out_of_range("index out of range");
         }
-        if (idx <= lhs_size) {
-            return lhs[idx];
-        }
 
-        if (idx <= size()) {
+        if (idx < lhs_size) {
+            return lhs[idx];
+        } else if (idx < size()) {
             auto rhs_view =
                 std::views::reverse(std::ranges::subrange(rhs.get(), rhs.get() + rhs_size));
 
