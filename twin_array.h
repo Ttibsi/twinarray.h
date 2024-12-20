@@ -29,13 +29,31 @@ class TwinArray {
     using const_pointer = std::allocator_traits<std::allocator<T>>::const_pointer;
 
    private:
-    std::unique_ptr<T[]> lhs;
-    std::unique_ptr<T[]> rhs;  // NOTE: rhs is stored backwards
-    std::size_t lhs_size;
-    std::size_t rhs_size;
-    std::size_t capacity;
+    template <typename ptr_type>
+    class IteratorTemplate {
+       public:
+        static const bool is_const = std::is_const_v<std::remove_pointer_t<ptr_type>>;
+
+        using value_type = typename std::conditional<is_const, const T, T>::type;
+        using gapbuffer_ptr_type =
+            typename std::conditional<is_const, const TwinArray*, TwinArray*>::type;
+        using difference_type = std::ptrdiff_t;
+        using pointer = ptr_type;
+        using reference = value_type&;
+        using iterator_category = std::random_access_iterator_tag;
+
+        explicit IteratorTemplate() = default;
+
+       private:
+    };
 
    public:
+    // Iterator member types
+    using iterator = IteratorTemplate<pointer>;
+    using const_iterator = IteratorTemplate<const_pointer>;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
     // Constructors
     constexpr explicit TwinArray(const std::size_t len = 32)
         : lhs(std::make_unique<T[]>(len)),
@@ -295,6 +313,13 @@ class TwinArray {
         }
         return (lhs_size - last_idx) - 1;
     }
+
+   private:
+    std::unique_ptr<T[]> lhs;
+    std::unique_ptr<T[]> rhs;  // NOTE: rhs is stored backwards
+    std::size_t lhs_size;
+    std::size_t rhs_size;
+    std::size_t capacity;
 };
 
 #endif  // TWIN_ARRAY_H
