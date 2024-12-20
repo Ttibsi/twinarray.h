@@ -241,4 +241,67 @@ ut::suite<"Capacity"> capacity = [] {
     };
 };
 
+ut::suite<"Char only"> char_only = [] {
+    using namespace ut;
+
+    "To Str"_test = [] {
+        std::string s = "Hello world\n";
+        auto buf = TwinArray<char>(s);
+
+        expect(buf.to_str() == s);
+    };
+
+    "Get Current Line"_test = [] {
+        std::string s = "Hello world\n";
+        auto buf = TwinArray<char>(s);
+
+        buf.move_left();
+        buf.move_left();
+
+        expect(buf.get_current_line() == "Hello world");
+    };
+
+    "Get Current Char"_test = [] {
+        std::string s = "Hello world\n";
+        auto buf = TwinArray<char>(s);
+
+        buf.move_left();
+        buf.move_left();
+        buf.move_left();
+        buf.move_left();
+
+        expect(buf.get_current_char() == 'o');
+    };
+
+    "Curr Line Index"_test = [] {
+        std::string s = "#include<iostream>\r\n\r\nint main() {\r\n";
+        auto buf = TwinArray<char>(s);
+        expect(buf.curr_line_index() == 4);
+        expect(buf.peek() == '\n');
+
+        for (int i = 0; i < 16; i++) {
+            buf.move_left();
+        }
+
+        // Should be in the empty line
+        expect(buf.curr_line_index() == 2);
+        expect(buf.peek() == '\n');
+    };
+
+    "Curr Char Index"_test = [] {
+        std::string s = "#include<iostream>\r\n\r\nint main() {\r\n";
+        auto buf = TwinArray<char>(s);
+        expect(buf.curr_char_index() == 0);
+        expect(buf.peek() == '\n');
+
+        for (int i = 0; i < 16; i++) {
+            buf.move_left();
+        }
+
+        // Should be in the empty line
+        expect(buf.curr_char_index() == 0);
+        expect(buf.peek() == '\n');
+    };
+};
+
 int main() {}

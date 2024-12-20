@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <ranges>
@@ -239,8 +240,7 @@ class TwinArray {
         requires(std::is_same_v<T, char>)
     {
         std::string ret;
-        std::for_each(
-            std::begin(lhs.get()), std::end(lhs.get()), [&](const char& c) { ret.push_back(c); });
+        std::for_each(lhs.get(), lhs.get() + lhs_size, [&](const char& c) { ret.push_back(c); });
 
         auto rhs_view = std::views::reverse(std::ranges::subrange(rhs.get(), rhs.get() + rhs_size));
 
@@ -252,11 +252,23 @@ class TwinArray {
     [[nodiscard]] std::string get_current_line() const noexcept
         requires(std::is_same_v<T, char>)
     {
-        auto last_idx = std::string_view(lhs.get()).find_last_of('\n');
         std::string ret;
+        int last_idx = std::string_view(lhs.get()).find_last_of('\n');
+        if (last_idx > lhs_size) {
+            last_idx = 0;
+        }
 
         for (int i = last_idx; i < lhs_size; i++) {
             ret.push_back(lhs[i]);
+        }
+
+        if (lhs[lhs_size - 1] != '\n') {
+            int rhs_idx = rhs_size - 1;
+
+            while (rhs[rhs_idx] != '\n' || rhs_idx > 0) {
+                ret.push_back(rhs[rhs_idx]);
+                rhs_idx--;
+            }
         }
 
         return ret;
@@ -265,20 +277,23 @@ class TwinArray {
     [[nodiscard]] char get_current_char() const noexcept
         requires(std::is_same_v<T, char>)
     {
-        return lhs[lhs_size];
+        return lhs[lhs_size - 1];
     }
 
-    [[nodiscard]] int curr_line_count() const noexcept
+    [[nodiscard]] int curr_line_index() const noexcept
         requires(std::is_same_v<T, char>)
     {
-        return std::count(std::begin(lhs.get()), std::end(lhs.get()), '\n');
+        return std::count(lhs.get(), lhs.get() + lhs_size, '\n') + 1;
     }
 
-    [[nodiscard]] int curr_char_count() const noexcept
+    [[nodiscard]] int curr_char_index() const noexcept
         requires(std::is_same_v<T, char>)
     {
         auto last_idx = std::string_view(lhs.get()).find_last_of('\n');
-        return lhs_size - last_idx;
+        if (last_idx > lhs_size) {
+            last_idx = 0;
+        }
+        return (lhs_size - last_idx) - 1;
     }
 };
 

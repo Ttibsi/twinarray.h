@@ -21,6 +21,10 @@ repos:
         args: [-p, build/compile_commands.json, -extra-arg=-std=c++20, -header-filter=.*]
         files: cpp
         exclude: "build/"
+  -   repo: https://github.com/shellcheck-py/shellcheck-py
+      rev: v0.10.0.1
+      hooks:
+      -   id: shellcheck
   - repo: https://github.com/sco1/brie-commit
     rev: v1.1.0
     hooks:
